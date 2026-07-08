@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 
 public class CalculadoraDeRendimentosZgInvest {
 
+	private static final int ESCALA = 2;
+
 	private final List<Negociacao> negociacoes;
 	private final Map<LocalDate, BigDecimal> precosFechamento;
 
@@ -46,7 +48,7 @@ public class CalculadoraDeRendimentosZgInvest {
 			BigDecimal custoTotalAnterior = BigDecimal.valueOf(Math.abs(atual.quantidade())).multiply(atual.custoMedio());
 			BigDecimal custoOperacao = BigDecimal.valueOf(negociacao.quantidade()).multiply(negociacao.preco());
 			BigDecimal novoCustoMedio = custoTotalAnterior.add(custoOperacao)
-					.divide(BigDecimal.valueOf(Math.abs(novaQtd)), 2, RoundingMode.DOWN);
+					.divide(BigDecimal.valueOf(Math.abs(novaQtd)), ESCALA, RoundingMode.DOWN);
 			return new EstadoPosicao(novaQtd, novoCustoMedio);
 		}
 
@@ -55,29 +57,32 @@ public class CalculadoraDeRendimentosZgInvest {
 			return new EstadoPosicao(novaQtd, atual.custoMedio());
 		}
 
-		return new EstadoPosicao(novaQtd, negociacao.preco().setScale(2, RoundingMode.DOWN));
+		return new EstadoPosicao(novaQtd, arredondar(negociacao.preco()));
 	}
 
 	private PosicaoCarteira montarPosicao(LocalDate data, EstadoPosicao estado, BigDecimal precoFechamento) {
-		BigDecimal saldoAtual = BigDecimal.valueOf(estado.quantidade())
-				.multiply(precoFechamento).setScale(2, RoundingMode.DOWN);
+		BigDecimal saldoAtual = arredondar(BigDecimal.valueOf(estado.quantidade()).multiply(precoFechamento));
 
 		BigDecimal custoTotal = BigDecimal.valueOf(Math.abs(estado.quantidade())).multiply(estado.custoMedio());
 
 		BigDecimal rendimentoPercentual;
 		if (custoTotal.compareTo(BigDecimal.ZERO) == 0) {
-			rendimentoPercentual = BigDecimal.ZERO.setScale(2, RoundingMode.DOWN);
+			rendimentoPercentual = arredondar(BigDecimal.ZERO);
 		} else {
 			BigDecimal rendimentoReais = BigDecimal.valueOf(estado.quantidade())
 					.multiply(precoFechamento.subtract(estado.custoMedio()));
 			rendimentoPercentual = rendimentoReais.multiply(BigDecimal.valueOf(100))
-					.divide(custoTotal, 2, RoundingMode.DOWN);
+					.divide(custoTotal, ESCALA, RoundingMode.DOWN);
 		}
 
 		return new PosicaoCarteira(data, estado.quantidade(), saldoAtual, rendimentoPercentual);
 	}
 
+	private static BigDecimal arredondar(BigDecimal valor) {
+		return valor.setScale(ESCALA, RoundingMode.DOWN);
+	}
+
 	private record EstadoPosicao(long quantidade, BigDecimal custoMedio) {
-		private static final EstadoPosicao ZERO = new EstadoPosicao(0L, BigDecimal.ZERO.setScale(2, RoundingMode.DOWN));
+		private static final EstadoPosicao ZERO = new EstadoPosicao(0L, arredondar(BigDecimal.ZERO));
 	}
 }
