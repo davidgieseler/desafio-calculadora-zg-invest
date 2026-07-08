@@ -41,11 +41,12 @@ public class CalculadoraDeRendimentosZgInvest {
 		long delta = negociacao.tipo() == OperacaoNegociacao.COMPRA ? negociacao.quantidade() : -negociacao.quantidade();
 		long novaQtd = atual.quantidade() + delta;
 
-		if (delta >= 0) {
-			BigDecimal custoTotalAnterior = BigDecimal.valueOf(atual.quantidade()).multiply(atual.custoMedio());
+		boolean mesmoSentidoOuAbertura = atual.quantidade() == 0 || Long.signum(atual.quantidade()) == Long.signum(delta);
+		if (mesmoSentidoOuAbertura) {
+			BigDecimal custoTotalAnterior = BigDecimal.valueOf(Math.abs(atual.quantidade())).multiply(atual.custoMedio());
 			BigDecimal custoOperacao = BigDecimal.valueOf(negociacao.quantidade()).multiply(negociacao.preco());
 			BigDecimal novoCustoMedio = custoTotalAnterior.add(custoOperacao)
-					.divide(BigDecimal.valueOf(novaQtd), 2, RoundingMode.DOWN);
+					.divide(BigDecimal.valueOf(Math.abs(novaQtd)), 2, RoundingMode.DOWN);
 			return new EstadoPosicao(novaQtd, novoCustoMedio);
 		}
 
@@ -56,7 +57,7 @@ public class CalculadoraDeRendimentosZgInvest {
 		BigDecimal saldoAtual = BigDecimal.valueOf(estado.quantidade())
 				.multiply(precoFechamento).setScale(2, RoundingMode.DOWN);
 
-		BigDecimal custoTotal = BigDecimal.valueOf(estado.quantidade()).multiply(estado.custoMedio());
+		BigDecimal custoTotal = BigDecimal.valueOf(Math.abs(estado.quantidade())).multiply(estado.custoMedio());
 
 		BigDecimal rendimentoPercentual;
 		if (custoTotal.compareTo(BigDecimal.ZERO) == 0) {
