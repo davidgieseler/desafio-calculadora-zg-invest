@@ -50,7 +50,12 @@ public class CalculadoraDeRendimentosZgInvest {
 			return new EstadoPosicao(novaQtd, novoCustoMedio);
 		}
 
-		return new EstadoPosicao(novaQtd, atual.custoMedio());
+		boolean reduzSemCruzar = Math.abs(delta) <= Math.abs(atual.quantidade());
+		if (reduzSemCruzar) {
+			return new EstadoPosicao(novaQtd, atual.custoMedio());
+		}
+
+		return new EstadoPosicao(novaQtd, negociacao.preco().setScale(2, RoundingMode.DOWN));
 	}
 
 	private PosicaoCarteira montarPosicao(LocalDate data, EstadoPosicao estado, BigDecimal precoFechamento) {
